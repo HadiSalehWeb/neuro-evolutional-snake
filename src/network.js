@@ -1,12 +1,12 @@
 'use strict';
 
 class NeuralNetwork {
-    constructor(layers, activation, weights) {
+    constructor(layers, weights) {
         this.layers = layers instanceof Array &&
             layers.length >= 2 &&
             layers.every(i => i >= 1) ? layers : [1, 1];
         this.layerCount = this.layers.length;
-        this.activation = activation instanceof Function ? activation : sigmoid;
+        this.activation = sigmoid;
         this.weights = weights instanceof Array &&
             weights.length === this.layerCount - 1 &&
             weights.every((x, i) => x.length === this.layers[i + 1] &&
@@ -49,7 +49,7 @@ class NeuralNetwork {
                     ret.push(this.weights[c][i][j]);
         return ret;
     }
-    static decodeNoMeta(layers, chr, activation) {
+    static decodeNoMeta(layers, chr) {
         const layerCount = layers.length;
         const weights = range(layerCount - 1).map(n => range(layers[n + 1]).map(_ => range(layers[n] + 1)));
         let index = 0;
@@ -57,18 +57,66 @@ class NeuralNetwork {
             for (let i = 0; i < layers[c + 1]; i++)
                 for (let j = 0; j < layers[c] + 1; j++)
                     weights[c][i][j] = chr[index++];
-        return new NeuralNetwork(layers, activation, weights);
+        return new NeuralNetwork(layers, weights);
     }
-    static decode(chr, activation) {
+    static decode(chr) {
         const layerCount = chr[0];
         const layers = chr.slice(1, layerCount + 1);
-        return NeuralNetwork.decodeNoMeta(layers, chr.slice(layerCount + 1), activation);
+        return NeuralNetwork.decodeNoMeta(layers, chr.slice(layerCount + 1));
     }
 }
 
 
 
+console.assert(new NeuralNetwork([2, 3, 1], [
+    [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+    ],
+    [
+        [1, 2, 3, 4]
+    ]
+]).feedforward([1, 2])[0] ===
+    sigmoid(
+        1 * sigmoid(1 * 1 + 2 * 2 + 3) +
+        2 * sigmoid(1 * 4 + 2 * 5 + 6) +
+        3 * sigmoid(1 * 7 + 2 * 8 + 9) +
+        4
+    )
+);
 
+console.assert(new NeuralNetwork([2, 3, 1], [
+    [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+    ],
+    [
+        [1, 2, 3, 4]
+    ]
+]).feedforward([[1], [2]])[0][0] ===
+    sigmoid(
+        1 * sigmoid(1 * 1 + 2 * 2 + 3) +
+        2 * sigmoid(1 * 4 + 2 * 5 + 6) +
+        3 * sigmoid(1 * 7 + 2 * 8 + 9) +
+        4
+    )
+);
 
+console.assert((net => net.encode(true).toString() === NeuralNetwork.decodeNoMeta([1, 1], net.encode(false)).encode(true).toString())(new NeuralNetwork([1, 1])));
+console.assert((net => net.encode(true).toString() === NeuralNetwork.decodeNoMeta([1, 2, 3], net.encode(false)).encode(true).toString())(new NeuralNetwork([1, 2, 3])));
+console.assert((net => net.encode(true).toString() === NeuralNetwork.decodeNoMeta([2, 2, 2, 2, 2, 2], net.encode(false)).encode(true).toString())(new NeuralNetwork([2, 2, 2, 2, 2, 2])));
+console.assert((net => net.encode(true).toString() === NeuralNetwork.decodeNoMeta([50, 30, 10], net.encode(false)).encode(true).toString())(new NeuralNetwork([50, 30, 10])));
 
+console.assert((net => net.equals(NeuralNetwork.decodeNoMeta([1, 1], net.encode(false))))(new NeuralNetwork([1, 1])));
+console.assert((net => net.equals(NeuralNetwork.decodeNoMeta([1, 2, 3], net.encode(false))))(new NeuralNetwork([1, 2, 3])));
+console.assert((net => net.equals(NeuralNetwork.decodeNoMeta([2, 2, 2, 2, 2, 2], net.encode(false))))(new NeuralNetwork([2, 2, 2, 2, 2, 2])));
+console.assert((net => net.equals(NeuralNetwork.decodeNoMeta([50, 30, 10], net.encode(false))))(new NeuralNetwork([50, 30, 10])));
 
+console.assert((net => net.encode(true).toString() === NeuralNetwork.decode(net.encode(true)).encode(true).toString())(new NeuralNetwork([1, 1])));
+console.assert((net => net.encode(true).toString() === NeuralNetwork.decode(net.encode(true)).encode(true).toString())(new NeuralNetwork([1, 2, 3])));
+console.assert((net => net.encode(true).toString() === NeuralNetwork.decode(net.encode(true)).encode(true).toString())(new NeuralNetwork([2, 2, 2, 2, 2, 2])));
+console.assert((net => net.encode(true).toString() === NeuralNetwork.decode(net.encode(true)).encode(true).toString())(new NeuralNetwork([50, 30, 10])));
+
+console.log("NerualNetwork tests passed.");

@@ -1,12 +1,5 @@
 'use strict';
 
-const PixelState = {
-    Empty: 0,
-    Wall: 1,
-    Snake: 2,
-    Food: 3
-};
-
 class Environment {
     constructor(snakes, size, food) {
         this.snakes = snakes instanceof Array && snakes.every(x => x instanceof Snake) ? snakes : [];

@@ -107,4 +107,3 @@ class Vector2 {
     static zero = new Vector2(0, 0);
     static one = new Vector2(1, 1);
 }
-
