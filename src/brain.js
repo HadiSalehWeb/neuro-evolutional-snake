@@ -24,6 +24,7 @@ window.tests.push(function () {
         constructor(arr) {
             this.arr = arr;
             this.getPixel = ({ x, y }) => arr[x][y];
+            this.size = new Vector2(arr.length, arr[0].length);
         }
     }
 

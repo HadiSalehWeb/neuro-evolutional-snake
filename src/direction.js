@@ -21,6 +21,9 @@ class Direction {
     pointsTowards(vector) {
         return this.equals(Direction.fromVector(vector));
     }
+    toVector(unit) {
+        return this.moveVector(Vector2.zero, unit);
+    }
     equals(d) {
         return this.b1 === d.b1 && this.b2 === d.b2;
     }

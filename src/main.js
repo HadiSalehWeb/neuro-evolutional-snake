@@ -30,7 +30,7 @@ window.onload = function () {
         if (chromosomes.length == 0) chromosomes.push(new NeuralNetwork(networkTopology).encodeWeights());
 
         chromosomes.push(...Evolution.mutate(
-            Evolution.crossover(chromosomes, population),
+            Evolution.crossover(chromosomes, population, Evolution.crossoverFunctions.alternate),
             mutationRate,
             (g => g + randomMinMax(-1, 1))
         ));

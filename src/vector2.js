@@ -73,6 +73,9 @@ class Vector2 {
     perpendicularTo(v) {
         return this.dot(v) === 0;
     }
+    abs() {
+        return this.map(Math.abs);
+    }
     floor() {
         return this.map(Math.floor);
     }
