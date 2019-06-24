@@ -55,56 +55,58 @@ class Direction {
 }
 
 
+if (!window.tests) window.tests = [];
 
+window.tests.push(function () {
+    console.assert(Direction.up.clone().equals(Direction.up));
+    console.assert(Direction.down.clone().equals(Direction.down));
+    console.assert(Direction.left.clone().equals(Direction.left));
+    console.assert(Direction.right.clone().equals(Direction.right));
 
-console.assert(Direction.up.clone().equals(Direction.up));
-console.assert(Direction.down.clone().equals(Direction.down));
-console.assert(Direction.left.clone().equals(Direction.left));
-console.assert(Direction.right.clone().equals(Direction.right));
+    console.assert(Direction.up.reverse().equals(Direction.down));
+    console.assert(Direction.down.reverse().equals(Direction.up));
+    console.assert(Direction.left.reverse().equals(Direction.right));
+    console.assert(Direction.right.reverse().equals(Direction.left));
 
-console.assert(Direction.up.reverse().equals(Direction.down));
-console.assert(Direction.down.reverse().equals(Direction.up));
-console.assert(Direction.left.reverse().equals(Direction.right));
-console.assert(Direction.right.reverse().equals(Direction.left));
+    console.assert(Direction.up.rotateClockwise().equals(Direction.right));
+    console.assert(Direction.right.rotateClockwise().equals(Direction.down));
+    console.assert(Direction.down.rotateClockwise().equals(Direction.left));
+    console.assert(Direction.left.rotateClockwise().equals(Direction.up));
 
-console.assert(Direction.up.rotateClockwise().equals(Direction.right));
-console.assert(Direction.right.rotateClockwise().equals(Direction.down));
-console.assert(Direction.down.rotateClockwise().equals(Direction.left));
-console.assert(Direction.left.rotateClockwise().equals(Direction.up));
+    console.assert(Direction.up.rotateCounterClockwise().equals(Direction.left));
+    console.assert(Direction.left.rotateCounterClockwise().equals(Direction.down));
+    console.assert(Direction.down.rotateCounterClockwise().equals(Direction.right));
+    console.assert(Direction.right.rotateCounterClockwise().equals(Direction.up));
 
-console.assert(Direction.up.rotateCounterClockwise().equals(Direction.left));
-console.assert(Direction.left.rotateCounterClockwise().equals(Direction.down));
-console.assert(Direction.down.rotateCounterClockwise().equals(Direction.right));
-console.assert(Direction.right.rotateCounterClockwise().equals(Direction.up));
+    console.assert(Direction.up.moveVector(Vector2.zero).equals(Vector2.up));
+    console.assert(Direction.right.moveVector(Vector2.zero).equals(Vector2.right));
+    console.assert(Direction.down.moveVector(Vector2.zero).equals(Vector2.down));
+    console.assert(Direction.left.moveVector(Vector2.zero).equals(Vector2.left));
 
-console.assert(Direction.up.moveVector(Vector2.zero).equals(Vector2.up));
-console.assert(Direction.right.moveVector(Vector2.zero).equals(Vector2.right));
-console.assert(Direction.down.moveVector(Vector2.zero).equals(Vector2.down));
-console.assert(Direction.left.moveVector(Vector2.zero).equals(Vector2.left));
+    console.assert(Direction.up.moveVector(Vector2.zero, new Vector2(4)).equals(Vector2.up.multiply(4)));
+    console.assert(Direction.right.moveVector(Vector2.zero, new Vector2(4)).equals(Vector2.right.multiply(4)));
+    console.assert(Direction.down.moveVector(Vector2.zero, new Vector2(4)).equals(Vector2.down.multiply(4)));
+    console.assert(Direction.left.moveVector(Vector2.zero, new Vector2(4)).equals(Vector2.left.multiply(4)));
 
-console.assert(Direction.up.moveVector(Vector2.zero, new Vector2(4)).equals(Vector2.up.multiply(4)));
-console.assert(Direction.right.moveVector(Vector2.zero, new Vector2(4)).equals(Vector2.right.multiply(4)));
-console.assert(Direction.down.moveVector(Vector2.zero, new Vector2(4)).equals(Vector2.down.multiply(4)));
-console.assert(Direction.left.moveVector(Vector2.zero, new Vector2(4)).equals(Vector2.left.multiply(4)));
+    console.assert(Direction.up.moveVector(Vector2.one).equals(new Vector2(1, 2)));
+    console.assert(Direction.right.moveVector(Vector2.one).equals(new Vector2(2, 1)));
+    console.assert(Direction.down.moveVector(Vector2.one).equals(new Vector2(1, 0)));
+    console.assert(Direction.left.moveVector(Vector2.one).equals(new Vector2(0, 1)));
 
-console.assert(Direction.up.moveVector(Vector2.one).equals(new Vector2(1, 2)));
-console.assert(Direction.right.moveVector(Vector2.one).equals(new Vector2(2, 1)));
-console.assert(Direction.down.moveVector(Vector2.one).equals(new Vector2(1, 0)));
-console.assert(Direction.left.moveVector(Vector2.one).equals(new Vector2(0, 1)));
+    console.assert(Direction.fromVector(Vector2.up).equals(Direction.up));
+    console.assert(Direction.fromVector(Vector2.down).equals(Direction.down));
+    console.assert(Direction.fromVector(Vector2.left).equals(Direction.left));
+    console.assert(Direction.fromVector(Vector2.right).equals(Direction.right));
 
-console.assert(Direction.fromVector(Vector2.up).equals(Direction.up));
-console.assert(Direction.fromVector(Vector2.down).equals(Direction.down));
-console.assert(Direction.fromVector(Vector2.left).equals(Direction.left));
-console.assert(Direction.fromVector(Vector2.right).equals(Direction.right));
+    console.assert(Direction.up.pointsTowards(new Vector2(0, 1)));
+    console.assert(!Direction.up.pointsTowards(new Vector2(0, -1)));
+    console.assert(!Direction.up.pointsTowards(new Vector2(10, 1)));
+    console.assert(!Direction.up.pointsTowards(new Vector2(-10, -1)));
 
-console.assert(Direction.up.pointsTowards(new Vector2(0, 1)));
-console.assert(!Direction.up.pointsTowards(new Vector2(0, -1)));
-console.assert(!Direction.up.pointsTowards(new Vector2(10, 1)));
-console.assert(!Direction.up.pointsTowards(new Vector2(-10, -1)));
+    console.assert(!Direction.down.pointsTowards(new Vector2(0, 1)));
+    console.assert(Direction.down.pointsTowards(new Vector2(0, -1)));
+    console.assert(Direction.right.pointsTowards(new Vector2(10, 1)));
+    console.assert(Direction.left.pointsTowards(new Vector2(-10, -1)));
 
-console.assert(!Direction.down.pointsTowards(new Vector2(0, 1)));
-console.assert(Direction.down.pointsTowards(new Vector2(0, -1)));
-console.assert(Direction.right.pointsTowards(new Vector2(10, 1)));
-console.assert(Direction.left.pointsTowards(new Vector2(-10, -1)));
-
-console.log("Direction tests passed.");
+    console.log("Direction tests passed.");
+});

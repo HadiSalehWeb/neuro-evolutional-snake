@@ -71,3 +71,77 @@ class Snake {
     }
 }
 
+
+if (!window.tests) window.tests = [];
+
+window.tests.push(function () {
+    const snake = new Snake(new Brain(), new Vector2(2, 2), [
+        Direction.up, Direction.up, Direction.right, Direction.right, Direction.right, Direction.up, Direction.up, Direction.left, Direction.left, Direction.down
+    ], Direction.right);
+
+    class GridTestEnvironment {
+        constructor(arr) {
+            this.arr = arr;
+            this.getPixel = ({ x, y }) => arr[x][y];
+            this.updateFoodPosition = () => { };
+            this.food = new Vector2(4, 2);
+        }
+    }
+
+    const grid = new GridTestEnvironment([
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 2, 2, 2, 0, 0, 0, 1],
+        [1, 0, 0, 0, 2, 2, 2, 0, 1],
+        [1, 0, 3, 0, 2, 0, 2, 0, 1],
+        [1, 0, 0, 0, 2, 2, 2, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    ]);
+
+    console.assert(grid.arr.reduce((a, c, i) => a &&
+        c.reduce((a, c, j) => a &&
+            (c === 2) === snake.intersects(new Vector2(i, j))
+            , true)
+        , true) === true);
+
+    snake.brain = { nextDecision: () => Decision.None };
+
+    snake.update(grid);
+
+    console.assert(snake.score === 1);
+    console.assert([
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 2, 2, 2, 0, 0, 0, 1],
+        [1, 0, 2, 0, 2, 0, 2, 0, 1],
+        [1, 0, 3, 0, 2, 0, 2, 0, 1],
+        [1, 0, 0, 0, 2, 2, 2, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    ].reduce((a, c, i) => a &&
+        c.reduce((a, c, j) => a &&
+            (c === 2) === snake.intersects(new Vector2(i, j))
+            , true)
+        , true) === true);
+
+    snake.update(grid);
+
+    console.assert(snake.score === 11);
+    console.assert([
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 2, 2, 2, 0, 0, 0, 1],
+        [1, 0, 2, 0, 2, 0, 2, 0, 1],
+        [1, 0, 2, 0, 2, 0, 2, 0, 1],
+        [1, 0, 0, 0, 2, 2, 2, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    ].reduce((a, c, i) => a &&
+        c.reduce((a, c, j) => a &&
+            (c === 2) === snake.intersects(new Vector2(i, j))
+            , true)
+        , true) === true);
+
+    console.log("Snake tests passed.");
+});

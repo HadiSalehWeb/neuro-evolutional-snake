@@ -22,12 +22,12 @@ window.onload = function () {
     const evolve = function (mutationRate) {
         const chromosomes = Evolution.selectTop(Math.floor(population / 5),
             canvases.map(canv => new Individual(
-                canv.environment.snakes[0].brain.network.encode(false),
+                canv.environment.snakes[0].brain.network.encodeWeights(),
                 canv.environment.snakes[0].score
             ))
         );
 
-        if (chromosomes.length == 0) chromosomes.push(new NeuralNetwork(networkTopology).encode(false));
+        if (chromosomes.length == 0) chromosomes.push(new NeuralNetwork(networkTopology).encodeWeights());
 
         chromosomes.push(...Evolution.mutate(
             Evolution.crossover(chromosomes, population),
@@ -163,3 +163,11 @@ window.onload = function () {
     newSimulationFolder.add(options.NewSimulation, 'frameSize').min(0).step(1).max(16);
     newSimulationFolder.add(options.NewSimulation, 'Create');
 };
+
+
+const runTests = function () {
+    if (!window.tests) console.log('No tests found.');
+    for (var test of window.tests)
+        test();
+}
+runTests();

@@ -15,3 +15,34 @@ class Brain {
         return [Decision.None, Decision.RotateClockwise, Decision.RotateCounterClockwise][argmax(this.network.feedforward(this.sensory.perceive(environment, snake.head, snake.direction)))];
     }
 }
+
+
+if (!window.tests) window.tests = [];
+
+window.tests.push(function () {
+    class GridTestEnvironment {
+        constructor(arr) {
+            this.arr = arr;
+            this.getPixel = ({ x, y }) => arr[x][y];
+        }
+    }
+
+    console.assert(new Brain(new Sensory(), new NeuralNetwork([15, 3], [
+        [
+            [1, 1, -1, 1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, -1, 0],
+            [1, 1, -1, 1, 1, -1, 1, 1, -1, 1, 1, -1, -1, -1, 1, 0],
+            [-1, -1, 1, 1, 1, -1, 1, 1, -1, 1, 1, -1, 1, 1, -1, 0]
+        ]
+    ])).nextDecision(new GridTestEnvironment([
+        [1, 1, 1, 1, 1],
+        [1, 2, 0, 0, 1],
+        [1, 0, 0, 0, 1],
+        [1, 3, 0, 0, 1],
+        [1, 1, 1, 1, 1]
+    ]), {
+            head: Vector2.one,
+            direction: Direction.up
+        }) === Decision.RotateClockwise);
+
+    console.log("Brain tests passed.");
+});

@@ -34,3 +34,12 @@ const Evolution = (function () {
         }
     }
 })();
+
+
+
+if (!window.tests) window.tests = [];
+
+window.tests.push(function () {
+
+    console.log("Environement tests passed.");
+});

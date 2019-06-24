@@ -1,5 +1,12 @@
 'use strict';
 
+const PixelState = {
+    Empty: 0,
+    Wall: 1,
+    Snake: 2,
+    Food: 3
+};
+
 class Environment {
     constructor(snakes, size, food) {
         this.snakes = snakes instanceof Array && snakes.every(x => x instanceof Snake) ? snakes : [];
@@ -34,7 +41,7 @@ class Environment {
             new Snake(
                 new Brain(
                     new Sensory(),
-                    NeuralNetwork.decodeNoMeta(this.snakes[0].brain.network.layers, chromosome)
+                    NeuralNetwork.decodeWeights(chromosome, this.snakes[0].brain.network.layers)
                 ),
                 Vector2.random(this.size.x * .4, this.size.x * .6, this.size.y * .4, this.size.y * .6).floor()
             )
@@ -42,7 +49,3 @@ class Environment {
         this.updateFoodPosition();
     }
 }
-
-
-
-

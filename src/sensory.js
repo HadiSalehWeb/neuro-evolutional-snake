@@ -1,12 +1,5 @@
 'use strict';
 
-const PixelState = {
-    Empty: 0,
-    Wall: 1,
-    Snake: 2,
-    Food: 3
-};
-
 class Sensory {
     constructor() {
         this.variableCount = 15;
@@ -34,68 +27,72 @@ class Sensory {
 
 
 
-console.assert(
-    new Sensory().raycast(Vector2.zero, [Direction.up], { getPixel: () => PixelState.Wall }).toString() ===
-    [1, 0, 0].toString()
-);
-console.assert(
-    new Sensory().raycast(Vector2.zero, [Direction.up], { getPixel: () => PixelState.Snake }).toString() ===
-    [0, 1, 0].toString()
-);
-console.assert(
-    new Sensory().raycast(Vector2.zero, [Direction.up], { getPixel: () => PixelState.Food }).toString() ===
-    [0, 0, 1].toString()
-);
+if (!window.tests) window.tests = [];
 
-class GridTestEnvironment {
-    constructor(arr) {
-        this.arr = arr;
-        this.getPixel = ({ x, y }) => arr[x][y];
+window.tests.push(function () {
+    console.assert(
+        new Sensory().raycast(Vector2.zero, [Direction.up], { getPixel: () => PixelState.Wall }).toString() ===
+        [1, 0, 0].toString()
+    );
+    console.assert(
+        new Sensory().raycast(Vector2.zero, [Direction.up], { getPixel: () => PixelState.Snake }).toString() ===
+        [0, 1, 0].toString()
+    );
+    console.assert(
+        new Sensory().raycast(Vector2.zero, [Direction.up], { getPixel: () => PixelState.Food }).toString() ===
+        [0, 0, 1].toString()
+    );
+
+    class GridTestEnvironment {
+        constructor(arr) {
+            this.arr = arr;
+            this.getPixel = ({ x, y }) => arr[x][y];
+        }
     }
-}
 
-console.assert(
-    new Sensory().raycast(Vector2.one, [Direction.right], new GridTestEnvironment([
-        [1, 1, 1, 1, 1],
-        [1, 2, 0, 0, 1],
-        [1, 0, 0, 0, 1],
-        [1, 3, 0, 0, 1],
-        [1, 1, 1, 1, 1]
-    ])).toString() ===
-    [0, 0, 1].toString()
-);
+    console.assert(
+        new Sensory().raycast(Vector2.one, [Direction.right], new GridTestEnvironment([
+            [1, 1, 1, 1, 1],
+            [1, 2, 0, 0, 1],
+            [1, 0, 0, 0, 1],
+            [1, 3, 0, 0, 1],
+            [1, 1, 1, 1, 1]
+        ])).toString() ===
+        [0, 0, 1].toString()
+    );
 
-console.assert(
-    new Sensory().raycast(Vector2.one, [Direction.up], new GridTestEnvironment([
-        [1, 1, 1, 1, 1],
-        [1, 2, 0, 0, 1],
-        [1, 0, 0, 0, 1],
-        [1, 3, 0, 0, 1],
-        [1, 1, 1, 1, 1]
-    ])).toString() ===
-    [1, 0, 0].toString()
-);
+    console.assert(
+        new Sensory().raycast(Vector2.one, [Direction.up], new GridTestEnvironment([
+            [1, 1, 1, 1, 1],
+            [1, 2, 0, 0, 1],
+            [1, 0, 0, 0, 1],
+            [1, 3, 0, 0, 1],
+            [1, 1, 1, 1, 1]
+        ])).toString() ===
+        [1, 0, 0].toString()
+    );
 
-console.assert(
-    new Sensory().raycast(Vector2.one, [Direction.right, Direction.up], new GridTestEnvironment([
-        [1, 1, 1, 1, 1],
-        [1, 2, 0, 0, 1],
-        [1, 0, 0, 0, 1],
-        [1, 3, 0, 2, 1],
-        [1, 1, 1, 1, 1]
-    ])).toString() ===
-    [0, 1, 0].toString()
-);
+    console.assert(
+        new Sensory().raycast(Vector2.one, [Direction.right, Direction.up], new GridTestEnvironment([
+            [1, 1, 1, 1, 1],
+            [1, 2, 0, 0, 1],
+            [1, 0, 0, 0, 1],
+            [1, 3, 0, 2, 1],
+            [1, 1, 1, 1, 1]
+        ])).toString() ===
+        [0, 1, 0].toString()
+    );
 
-console.assert(
-    new Sensory().perceive(new GridTestEnvironment([
-        [1, 1, 1, 1, 1],
-        [1, 2, 0, 0, 1],
-        [1, 0, 0, 0, 1],
-        [1, 3, 0, 2, 1],
-        [1, 1, 1, 1, 1]
-    ]), Vector2.one, Direction.up).toString() ===
-    [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1].toString()
-);
+    console.assert(
+        new Sensory().perceive(new GridTestEnvironment([
+            [1, 1, 1, 1, 1],
+            [1, 2, 0, 0, 1],
+            [1, 0, 0, 0, 1],
+            [1, 3, 0, 2, 1],
+            [1, 1, 1, 1, 1]
+        ]), Vector2.one, Direction.up).toString() ===
+        [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1].toString()
+    );
 
-console.log("Sensory tests passed.");
+    console.log("Sensory tests passed.");
+});
