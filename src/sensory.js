@@ -14,8 +14,8 @@ class Sensory {
             pixel = environment.getPixel(pos);
             distance += 1;//distancePerStep;
         } while (pixel === PixelState.Empty);
-        // var dirVec = directions.reduce((a, c) => a.add(c.toVector().abs()), Vector2.zero).normalize();
-        var scaledDistance = distance / environment.size.x;
+        // const dirVec = directions.reduce((a, c) => a.add(c.toVector().abs()), Vector2.zero).normalize();
+        const scaledDistance = distance / environment.size.x;
 
         return [
             pixel === PixelState.Wall ? scaledDistance : 0,

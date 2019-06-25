@@ -167,7 +167,7 @@ window.onload = function () {
 
 const runTests = function () {
     if (!window.tests) console.log('No tests found.');
-    for (var test of window.tests)
+    for (let test of window.tests)
         test();
 }
 runTests();
