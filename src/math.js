@@ -5,6 +5,11 @@ const sigmoid = n => 1 / (1 + Math.exp(-n));
 const flatten = arr => arr.reduce((a, c) => a.concat(c instanceof Array ? flatten(c) : c), []);
 
 const range = n => Array(n).fill(0).map((_, i) => i);
+const last = arr => arr[arr.length - 1];
+const head = arr => arr[0];
+const tail = arr => arr.slice(1);
+const init = arr => arr.slice(0, arr.length - 1);
+const middle = arr => init(tail(arr));
 
 const randomRange = (start, range) => Math.random() * range + start;
 const randomMinMax = (min, max) => randomRange(min, max - min);
