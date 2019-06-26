@@ -76,6 +76,7 @@ class NeatNetwork {
         this.outputNodes = outputNodes;
         this.hiddenNodes = hiddenNodes;
         this.connections = connections;
+        this.nextHistoricalMarking = Math.max(...connections.map(x => x.historicalMarking)) + 1;
     }
     feedforward(input) {
         for (let node of [...this.hiddenNodes, ...this.outputNodes])
@@ -87,7 +88,6 @@ class NeatNetwork {
         return this.outputNodes.map(node => node.getValue());
     }
     static fullyConnected(topology, startHistoricalMarking = 0, activation = sigmoid) {
-        const layerCount = topology.length;
         const layers = [range(topology[0]).map(i => new NeatNode(i, NeatNode.Type.Input)).concat(new NeatNode(topology[0], NeatNode.Type.Bias))];
         let nodeCounter = topology[0] + 1;
         const connections = [];
@@ -107,8 +107,6 @@ class NeatNetwork {
                 layer.push(new NeatNode(nodeCounter++, NeatNode.Type.Bias));
             layers.push(layer);
         }
-
-        console.log(layers);
 
         return new NeatNetwork(
             init(layers[0]),
