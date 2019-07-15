@@ -3,6 +3,7 @@
 const multiply = (m1, m2) => m1.map((_, r1) => m2[0].map((_, c2) => m2.reduce((val, _, rc) => val + m1[r1][rc] * m2[rc][c2], 0)));
 const sigmoid = n => 1 / (1 + Math.exp(-n));
 const flatten = arr => arr.reduce((a, c) => a.concat(c instanceof Array ? flatten(c) : c), []);
+const unique = (arr, selector) => arr.reduce((a, c) => a.some(x => selector(x) === selector(c)) ? a : a.concat(c), []);
 
 const range = n => Array(n).fill(0).map((_, i) => i);
 const last = arr => arr[arr.length - 1];
