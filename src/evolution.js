@@ -1,5 +1,7 @@
 'use strict';
 
+//Todo: replace 'Individual' with 'organism'
+
 class Individual {
     constructor(chromosome, fitness) {
         this.chromosome = chromosome;

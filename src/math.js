@@ -17,6 +17,8 @@ const randomMinMax = (min, max) => randomRange(min, max - min);
 const randomOpen = () => (r => r === 0 ? randomOpen() : r)(Math.random());
 const randomNormal = (mean, stdv) => Math.sqrt(-2 * Math.log(randomOpen())) * Math.cos(2 * Math.PI * randomOpen()) * stdv + mean;
 
+const randomElementFrom = arr => arr[Math.floor(Math.random() * arr.length)];
+
 const rotationMatrix2d = angle => {
     const sin = Math.sin(angle), cos = Math.cos(angle);
     return [
