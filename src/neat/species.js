@@ -3,18 +3,17 @@
 if (!window.Neat) window.Neat = {};
 
 Neat.Species = class {
-    constructor(representative, maxFitness = 0, ageSinceNewMax = 0) {
+    constructor(representative, maxFitness = 0, stagnationAge = 0) {
         this.representative = representative;
         this.genomes = [];
         this.maxFitness = maxFitness;
-        this.ageSinceNewMax = ageSinceNewMax;
+        this.stagnationAge = stagnationAge;
     }
     addGenome(genome) {
         this.genomes.push(genome);
     }
     compatibilityDistance(genome, c1, c2, c3) {
         let matchingGeneCount = 0, disjointGeneCount = 0, excessGeneCount = 0, totalWeightDifference = 0;
-
 
         let genes1 = this.representative.genes, genes2 = genome.genes, i1 = 0, i2 = 0, cluster1 = 0, cluster2 = 0;
 
@@ -53,7 +52,8 @@ Neat.Species = class {
             }
         }
 
-        const genomeLength = Math.max(genes1.length, genes2.length), normalizingFactor = genomeLength < 20 ? 1 : genomeLength;
+        const genomeLength = Math.max(genes1.length, genes2.length);
+        const normalizingFactor = genomeLength < 20 ? 1 : genomeLength;
 
         return c1 * disjointGeneCount / normalizingFactor +
             c2 * excessGeneCount / normalizingFactor +
@@ -65,10 +65,21 @@ Neat.Species = class {
     }
     progressOneGeneration() {
         let maxFitness = Math.max(...this.genomes.map(g => g.fitness));
-        
+
         if (maxFitness > this.maxFitness)
             return new Neat.Species(randomElementFrom(this.genomes), maxFitness, 0);
         else
-            return new Neat.Species(randomElementFrom(this.genomes), this.maxFitness, this.ageSinceNewMax + 1);
+            return new Neat.Species(randomElementFrom(this.genomes), this.maxFitness, this.stagnationAge + 1);
+    }
+    toJOSN() {
+        return {
+            representative: this.representative.toJOSN(),
+            genomes: this.genomes.map(g => g.toJOSN()),
+            maxFitness: this.maxFitness,
+            stagnationAge: this.stagnationAge
+        }
+    }
+    toString() {
+        return `Species(representative: ${this.representative.toString()}, geomes: [${this.genomes.map(g => g.toString()).join(', ')}], maxFitness: ${this.maxFitness}, stagnationAge: ${this.stagnationAge})`;
     }
 }

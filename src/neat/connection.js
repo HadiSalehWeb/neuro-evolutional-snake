@@ -20,4 +20,16 @@ Neat.Connection = class {
     weightedInput() {
         return this.enabled ? this.weight * this.inNode.getValue() : 0;
     }
+    toJOSN() {
+        return {
+            inNode: this.inNode.toJOSN(),
+            outNode: this.outNode.toJOSN(),
+            weight: this.weight,
+            innovation: this.innovation,
+            enabled: this.enabled
+        }
+    }
+    toString() {
+        return `Connection(inNode: ${this.inNode.toString()}, outNode: ${this.outNode.toString()}, weight: ${this.weight}, innovation: ${this.innovation}, enabled: ${this.enabled})`;
+    }
 };

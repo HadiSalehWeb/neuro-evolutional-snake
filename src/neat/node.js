@@ -3,16 +3,17 @@
 if (!window.Neat) window.Neat = {};
 
 Neat.Node = class {
+    static activation = x => sigmoid(4.9 * x)
     /**
      * @param {Number} id
-     * @param {Number} type Pulled from Neat.Node.Type.
-     * @param {Function} [activation=sigmoid] The activation function associated with this node (Number => Number).
+     * @param {Neat.Node.Type} type
+     * @param {Number} depth Distance to the furthest input or bias node.
      * @param {Neat.Connection[]} [connections=[]] The weighted connections leading to this node.
      */
-    constructor(id, type, activation = sigmoid, connections = []) {
+    constructor(id, type, depth, connections = []) {
         this.id = id;
         this.type = type;
-        this.activation = activation;
+        this.depth = depth;
         this.connections = connections;
         this.hasValue = false;
         this.value = 0;
@@ -30,9 +31,10 @@ Neat.Node = class {
                 if (!this.hasValue) throw 'Input node without a set value encountered.';
                 return this.value;
             case Neat.Node.Type.Inner:
+            case Neat.Node.Type.Output:
                 if (!this.hasValue) {
                     this.hasValue = true;
-                    this.value = this.activation(this.connections.reduce((a, c) => a + c.weightedInput(), 0));
+                    this.value = Neat.Node.activation(this.connections.reduce((a, c) => a + c.weightedInput(), 0));
                 }
                 return this.value;
             default:
@@ -45,16 +47,17 @@ Neat.Node = class {
     static Type = {
         Input: 0,
         Bias: 1,
-        Inner: 2
+        Inner: 2,
+        Output: 3
     }
     toJOSN() {
         return {
             id: this.id,
             type: this.type,
-            activation: this.activation
+            depth: this.depth
         }
     }
     toString() {
-        return `Node(id = ${this.id}, type: ${Object.keys(Neat.Node.Type).find(k => Neat.Node.Type[k] === this.type)}, activation: ${this.activation})`;
+        return `Node(id = ${this.id}, type: ${Object.keys(Neat.Node.Type).find(k => Neat.Node.Type[k] === this.type)}, depth: ${this.depth})`;
     }
 }

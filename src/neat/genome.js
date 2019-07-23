@@ -11,79 +11,117 @@ Neat.Genome = class {
         const nodes = [];
 
         const inputNodes = unique(
-            this.genes.filter(g => g.inNodeType === Neat.Node.Type.Input),
-            g => g.inNodeId
-        ).map(g => new Neat.Node(g.inNodeId, g.inNodeType, g.inNodeActivation));
+            this.genes.filter(g => g.inType === Neat.Node.Type.Input),
+            g => g.inId
+        ).map(g => new Neat.Node(g.inId, g.inType, g.inDepth));
 
         nodes.push(...inputNodes);
 
         const outputNodes = unique(
-            this.genes.filter(g1 => !this.genes.some(g2 => g2.inNodeId === g1.outNodeId)),
-            g => g.outNodeId
-        ).map(g => new Neat.Node(g.outNodeId, g.outNodeType, g.outNodeActivation));
+            this.genes.filter(g => g.outType === Neat.Node.Type.Output),
+            g => g.outId
+        ).map(g => new Neat.Node(g.outId, g.outType, g.inDepth));
 
         nodes.push(...outputNodes);
 
         const hiddenNodes = unique(
-            this.genes.filter(g => !nodes.some(n => n.id === g.inNodeId)),
-            g => g.inNodeId
-        ).map(g => new Neat.Node(g.inNodeId, g.inNodeType, g.inNodeActivation));
+            this.genes.filter(g => !nodes.some(n => n.id === g.inId)),
+            g => g.inId
+        ).map(g => new Neat.Node(g.inId, g.inType, g.inDepth));
 
         nodes.push(...hiddenNodes);
 
         const connections = [];
 
         for (let gene of this.genes) {
-            const outNode = nodes.find(n => n.id === gene.outNodeId);
-            const connection = new Neat.Connection(nodes.find(n => n.id === gene.inNodeId), outNode, gene.weight, gene.innovation, gene.enabled);
+            const out = nodes.find(n => n.id === gene.outId);
+            const connection = new Neat.Connection(nodes.find(n => n.id === gene.inId), out, gene.weight, gene.innovation, gene.enabled);
             connections.push(connection);
-            outNode.connections.push(connection);
+            out.connections.push(connection);
         }
 
         return new Neat.Network(inputNodes, outputNodes, hiddenNodes, connections);
     }
+    resolveDepth(gene) {
+        // Probably not the most efficient way to do it but fuck it
+        gene.outDepth++;
+
+        for (let nextGene of this.genes)
+            if (nextGene.inId === gene.outId)
+                nextGene.inDepth = gene.outDepth;
+            else if (nextGene.outId === gene.outId)
+                nextGene.outDepth = gene.outDepth;
+
+        for (let nextGene of this.genes)
+            if (nextGene.inId === gene.outId && nextGene.outDepth === gene.outDepth) {
+                this.resolveDepth(nextGene);
+                return;
+            }
+    }
     crossover(genome) {
+        //Todo: enabled/disabled
         let genes1 = this.genes, genes2 = genome.genes,
             fitness1 = this.fitness, fitness2 = genome.fitness,
-            i1 = 0, i2 = 0, iOffspring = 0, offspring = [];
+            i1 = 0, i2 = 0, iOffspring = 0, offspringGenes = [];
 
         while (i1 < genes1.length || i2 < genes2.length) {
             if (i2 >= genes2.length || genes1[i1].innovation < genes2[i2].innovation) {
                 if (fitness1 > fitness2 || (fitness1 === fitness2 && Math.random() < .5))
-                    offspring[iOffspring++] = genes1[i1];
+                    offspringGenes[iOffspring++] = genes1[i1];
                 i1++;
             } else if (i1 >= genes1.length || genes2[i2].innovation < genes1[i1].innovation) {
                 if (fitness2 > fitness1 || (fitness1 === fitness2 && Math.random() < .5))
-                    offspring[iOffspring++] = genes2[i2];
+                    offspringGenes[iOffspring++] = genes2[i2];
                 i2++;
-            } else if (genes1[i1].innovation === genes2[i2].innovation) {
-                offspring[iOffspring++] = Math.random() < .5 ? genes1[i1] : genes2[i2];
+            } else if (genes1[i1].innovation === genes2[i2].innovation) /* Practically just an 'else' */ {
+                offspringGenes[iOffspring++] = Math.random() < .5 ? genes1[i1] : genes2[i2];
+                if ((!genes1[i1].enabled || !genes2[i2].enabled) && Math.random() < .25)
+                    offspringGenes[iOffspring].enabled = true;
                 i1++;
                 i2++;
             }
         }
 
+        const offspring = offspringGenes;
+
+        for (var gene of offspring.genes)
+            if (gene.inDepth >= gene.outDepth)
+                this.resolveDepth(gene);
+
         return offspring;
     }
     mutateSplit(geneIndex, innovation1, innovation2) {
-        const nextNodeId = Math.max(...flatten(this.genes.map(g => [g.inNodeId, g.outNodeId]))) + 1;
+        const nextNodeId = Math.max(...flatten(this.genes.map(g => [g.inId, g.outId]))) + 1;
         const gene = this.genes[geneIndex];
         gene.enabled = false;
         this.genes.push(new Neat.Gene(
-            gene.inNodeId, gene.inNodeType, gene.inNodeActivation,
-            nextNodeId, Neat.Node.Type.Inner, gene.inNodeId.activation,
+            gene.inId, gene.inType, gene.inDepth,
+            nextNodeId, Neat.Node.Type.Inner, gene.inDepth + 1,
             1, innovation1, true));
         this.genes.push(new Neat.Gene(
-            nextNodeId, Neat.Node.Type.Inner, gene.inNodeId.activation,
-            gene.outNodeId, gene.outNodeType, gene.outNodeActivation,
+            nextNodeId, Neat.Node.Type.Inner, gene.inDepth + 1,
+            gene.outId, gene.outType, gene.outDepth,
             gene.weight, innovation2, true));
+
+        if (gene.inDepth + 1 === gene.outDepth) this.resolveDepth(last(this.genes));
     }
-    mutateConnect(srcNodeId, distNodeId, innovation) {
-        const inEx = this.genes.find(g => g.inNodeId === srcNodeId),
-            outEx = this.genes.find(g => g.outNodeId === distNodeId);
+    mutateConnect(inId, outId, innovation) {
+        const { inType, inDepth } = this.genes.find(g => g.inId === inId),
+            { outType, outDepth } = this.genes.find(g => g.outId === outId);
         this.genes.push(new Neat.Gene(
-            srcNodeId, inEx.inNodeType, inEx.activation,
-            distNodeId, outEx.outNodeType, outEx.outNodeActivation,
-            randomNormal(0, 1), innovation, true));//TODORANDOMWEIGHTS
+            inId, inType, inDepth,
+            outId, outType, outDepth,
+            randomNormal(0, 1), innovation, true));//TODOFORMALIZERANDOMWEIGHTS
+
+        if (inDepth >= outDepth) throw 'yo what the fuck';
+    }
+    toJOSN() {
+        return {
+            genes: this.genes.map(g => g.toJOSN()),
+            fitness: this.fitness
+        }
+    }
+    toString() {
+        return `Genome(genes: [${this.genes.map(g => g.toString()).join(', ')}], fitness: ${this.fitness})`;
     }
 };
