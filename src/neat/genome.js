@@ -7,6 +7,9 @@ Neat.Genome = class {
         this.genes = genes;
         this.fitness = fitness;
     }
+    static fromGenome(genome) {
+        return new Neat.Genome(genome.genes.map(g => Neat.Gene.fromGene(g)), genome.fitness);
+    }
     decode() {
         const nodes = [];
 
@@ -59,7 +62,6 @@ Neat.Genome = class {
             }
     }
     crossover(genome) {
-        //Todo: enabled/disabled
         let genes1 = this.genes, genes2 = genome.genes,
             fitness1 = this.fitness, fitness2 = genome.fitness,
             i1 = 0, i2 = 0, iOffspring = 0, offspringGenes = [];
@@ -90,8 +92,8 @@ Neat.Genome = class {
 
         return offspring;
     }
-    mutateSplit(geneIndex, innovation1, innovation2) {
-        const nextNodeId = Math.max(...flatten(this.genes.map(g => [g.inId, g.outId]))) + 1;
+    mutateSplit(geneIndex, innovation1, innovation2, newNodeId = -1) {
+        if (newNodeId === -1) newNodeId = Math.max(...flatten(this.genes.map(g => [g.inId, g.outId]))) + 1;
         const gene = this.genes[geneIndex];
         gene.enabled = false;
         this.genes.push(new Neat.Gene(
@@ -104,6 +106,8 @@ Neat.Genome = class {
             gene.weight, innovation2, true));
 
         if (gene.inDepth + 1 === gene.outDepth) this.resolveDepth(last(this.genes));
+
+        return newNodeId;
     }
     mutateConnect(inId, outId, innovation) {
         const { inType, inDepth } = this.genes.find(g => g.inId === inId),

@@ -8,6 +8,8 @@ Neat.Species = class {
         this.genomes = [];
         this.maxFitness = maxFitness;
         this.stagnationAge = stagnationAge;
+        this.totalGenomeFitness = -1;
+        this.speciesFitness = -1;
     }
     addGenome(genome) {
         this.genomes.push(genome);
@@ -59,9 +61,11 @@ Neat.Species = class {
             c2 * excessGeneCount / normalizingFactor +
             c3 * totalWeightDifference / matchingGeneCount;
     }
-    eliminateUnfit() {
+    eliminateUnfitAndSetFitness() {
         this.genomes.sort((a, b) => b.fitness - a.fitness);
         this.genomes = this.genomes.slice(0, Math.floor(this.genomes.length / 2));
+        this.totalGenomeFitness = this.genomes.reduce((a, c) => a + c, 0);
+        this.speciesFitness = this.totalGenomeFitness / this.genomes.length;
     }
     progressOneGeneration() {
         let maxFitness = Math.max(...this.genomes.map(g => g.fitness));

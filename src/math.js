@@ -13,10 +13,27 @@ const tail = arr => arr.slice(1);
 const init = arr => arr.slice(0, arr.length - 1);
 const middle = arr => init(tail(arr));
 const unique = (arr, selector) => arr.reduce((a, c) => a.some(x => selector(x) === selector(c)) ? a : a.concat(c), []);
+const removeAt = (arr, i) => arr.slice(0, i).concat(arr.slice(i + 1));
 
+const randomSign = () => Math.random() < .5 ? -1 : 1;
 const randomRange = (start, range) => Math.random() * range + start;
 const randomMinMax = (min, max) => randomRange(min, max - min);
 const randomOpen = () => (r => r === 0 ? randomOpen() : r)(Math.random());
 const randomNormal = (mean, stdv) => Math.sqrt(-2 * Math.log(randomOpen())) * Math.cos(2 * Math.PI * randomOpen()) * stdv + mean;
 
 const randomElementFrom = arr => arr[Math.floor(Math.random() * arr.length)];
+
+/**
+ * Returns the index of the selected element.
+ */
+const weightedRandomElementFrom = function (arr, totalWeight, weightSelector) {
+    let rand = Math.random() * totalWeight, i = 0;
+
+    while (true) {
+        rand -= weightSelector(arr[i]);
+        if (rand < 0) break;
+        i++;
+    }
+
+    return i;
+}

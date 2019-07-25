@@ -4,25 +4,24 @@ if (!window.Neat) window.Neat = {};
 
 Neat.Innovation = {
     AddNode: class {
-        constructor(connectionInnovation, newInnovation1, newInnovation2) {
+        constructor(connectionInnovation, newInnovation1, newInnovation2, newNodeId) {
             this.connectionInnovation = connectionInnovation;
             this.newInnovation1 = newInnovation1;
             this.newInnovation2 = newInnovation2;
+            this.newNodeId = newNodeId;
         }
-        equals(innovation) {
-            return innovation instanceof Neat.Innovation.AddNode && innovation.connectionInnovation === connectionInnovation;
+        equals(connectionInnovation) {
+            return connectionInnovation === this.connectionInnovation;
         }
     },
     AddConnection: class {
-        constructor(srcId, distId, newInnovation) {
-            this.srcId = srcId;
-            this.distId = distId;
+        constructor(inId, outId, newInnovation) {
+            this.inId = inId;
+            this.outId = outId;
             this.newInnovation = newInnovation;
         }
-        equals(innovation) {
-            return innovation instanceof Neat.Innovation.AddConnection &&
-                innovation.srcId === srcId &&
-                innovation.distId === distId;
+        equals(inId, outId) {
+            return this.inId === inId && this.outId === outId;
         }
     }
 };

@@ -1,24 +1,29 @@
 'use strict';
 
-// Next up: the last four parameters' implementation
-
-//Todo: make sure loops don't happen in hidden layers
-
 if (!window.Neat) window.Neat = {};
 
 Neat.Algorithm = class {
     constructor(inputDimension, outputDimension, populationSize, parameters = {}) {
         this.populationSize = populationSize;
         this.population = range(populationSize).map(_ => Neat.Network.minimal(inputDimension, outputDimension, 0));
-        this.innovation = Math.max(...this.population[0].connections.map(x => x.innovation)) + 1;
         this.species = [];
+
+        this.innovationNumber = Math.max(...this.population[0].connections.map(x => x.innovation)) + 1;
+        this.nodeId = Math.max(...flatten(this.population[0].connections.map(x => [x.inId, x.outId])));
+        this.newNodeInnovations = [];
+        this.newConnectionInnovations = [];
+
+        this.maxFitness = -1;
+        this.stagnationAge = 0;
+
         Object.assign(this,
             Object.assign({
                 compatibilityThreshold: 3,
                 c1: 1,
                 c2: 1,
                 c3: .4,
-                maxStagnation: 15,
+                maxSpeciesStagnation: 15,
+                maxPopulationStagnation: 20,
                 eliteSpeciesThreshold: 5,
                 elitistCount: 1,
                 genomeWeightMutationChance: .8,
@@ -29,14 +34,69 @@ Neat.Algorithm = class {
                 mutationWithoutCrossoverRate: .25,
                 interspeciesMatingRate: .001,
                 newNodeChance: .03,
-                newLinkChance: .05,
+                newConnectionChance: .05,
             }, parameters)
         );
+    }
+    static findNodesToConnect(genome) {
+        const fromNodes = unique(genome.genes.slice(), x => x.inId)
+        while (fromNodes.length > 0) {
+            const fromIndex = Math.floor(Math.random() * fromNodes.length);
+            const fromGene = fromNodes[fromIndex];
+
+            const toNodes = unique(genome.genes.filter(g => g.outDepth > fromGene.inDepth).slice(), x => x.outId);
+            while (toNodes.length > 0) {
+                const toIndex = Math.floor(Math.random() * toNodes.length);
+                const toGene = toNodes[toIndex];
+                if (!genome.genes.some(g => g.inId === fromGene.inId && g.outId === toGene.outId))
+                    return [fromGene.inId, toNode.outId];
+
+                toNodes.splice(toIndex, 1);
+            }
+
+            genes.splice(fromIndex, 1);
+        }
+        return undefined;
+    }
+    mutateWeights(genome) {
+        for (let gene of genome.genes) {
+            const r = Math.random();
+            if (r < this.geneWeightPerturbationChance) {
+                gene.weight += this.weightPerturbation * randomSign();
+            } else if (r < this.geneWeightPerturbationChance + this.geneWeightNewValueChance) {
+                gene.weight = randomNormal(0, this.weightNewValueStdv);
+            }
+        }
+    }
+    addNode(genome) {
+        const geneIndex = randomElementFrom(genome.genes.map((g, i) => [g, i]).filter(a => a[0].enabled))[1];
+        const gene = genome.genes[geneIndex];
+        let innov = this.newNodeInnovations.find(i => i.equals(gene.innovation));
+
+        if (innov === undefined) {
+            innov = new Neat.Innovation.AddNode(gene.innovation, this.innovationNumber++, this.innovationNumber++, this.nodeId++);
+            this.newNodeInnovations.push(innov);
+        }
+
+        genome.mutateSplit(geneIndex, innov.newInnovation1, innov.newInnovation2, innov.newNodeId);
+    }
+    addConnection(genome) {
+        const nodes = Neat.Algorithm.findNodesToConnect(genome);
+        const [inId, outId] = nodes;
+
+        let innov = this.newConnectionInnovations.find(i => i.equals(inId, outId));
+
+        if (innov === undefined) {
+            innov = new Neat.Innovation.AddConnection(idId, outId, this.innovationNumber++);
+            this.newConnectionInnovations.push(innov);
+        }
+
+        genome.mutateConnect(inId, outId, innov.newInnovation);
     }
     evaluateOneGeneration(fitnessFunction) {
         // 0. Remove shitty species from last generation
 
-        this.species = this.species.filter(sp => sp.stagnationAge < this.maxStagnation);
+        this.species = this.species.filter(sp => sp.stagnationAge < this.maxSpeciesStagnation);
 
         // 1. Classify current population into species
 
@@ -61,89 +121,95 @@ Neat.Algorithm = class {
             }
         }
 
-        // 2. Eliminate least fit genomes (and adjust fitness of the rest)
+        // 2. Eliminate least fit genomes
 
-        const selectedGenomes = [];
+        for (let sp of this.species)
+            sp.eliminateUnfitAndSetFitness();
 
-        for (let sp of this.species) {
-            sp.eliminateUnfit();
-            for (let genome of sp.genomes) {
-                genome.fitness /= sp.genomes.length;
-                selectedGenomes.push(genome);
-            }
-        }
+        this.species.sort((a, b) => b.speciesFitness - a.speciesFitness);
 
-        selectedGenomes.sort((a, b) => b.fitness - a.fitness);
-        const totalFitness = selectedGenomes.reduce((a, c) => a + c.fitness, 0);
+        // 3. Check if whole population is stagnant
+
+        const maxFitness = Math.max(...newGenomes.map(x => x.fitness));
+        if (maxFitness > this.maxFitness) {
+            this.maxFitness = maxFitness;
+            this.stagnationAge = 0;
+        } else this.stagnationAge++;
+
+        if (this.stagnationAge > this.maxPopulationStagnation)
+            this.species = this.species.slice(0, 2);
 
         // 3. Crossover (with weighted probability of selection)
+
+        const totalSpeciesFitness = this.species.reduce((a, c) => a + c.speciesFitness, 0);
 
         const elites = this.species
             .reduce((a, c) => c.genomes.length > this.eliteSpeciesThreshold ? a.concat(c.genomes.slice(0, this.elitistCount)) : a, []);
 
         const offsprings = [];
 
-        // Rewrite this shit it's completely wrong. It should instead only crossover genomes within the same species with a small chance of interspecies crossover
         while (offsprings.length + elites.length < this.populationSize * (1 - this.mutationWithoutCrossoverRate)) {
-            let p1 = randomRange(0, totalFitness), p2 = randomRange(0, totalFitness), i1 = 0, i2 = 0;
+            const isp1 = weightedRandomElementFrom(this.species, totalSpeciesFitness, s => s.speciesFitness),
+                sp1 = this.species[isp1],
+                ig1 = weightedRandomElementFrom(sp1.genomes, sp1.totalGenomeFitness, g => g.fitness),
+                g1 = sp1.genomes[ig1];
 
-            while (p1 > selectedGenomes[i1].fitness) {
-                p1 -= selectedGenomes[i1].fitness;
-                i1++;
+            let g2;
+
+            if (Math.random() < this.interspeciesMatingRate) {
+                const isp2 = weightedRandomElementFrom(
+                    removeAt(this.species, isp1),
+                    totalSpeciesFitness - sp1.speciesFitness,
+                    s => s.speciesFitness
+                ),
+                    sp2 = this.species[isp2];//,
+                //ig2 = weightedRandomElementFrom(sp2.genomes, sp2.totalGenomeFitness, g => g.fitness);
+                g2 = sp2.genomes[0];//sp2.genomes[ig2];
+            } else {
+                g2 = sp1.genomes[weightedRandomElementFrom(removeAt(sp1.genomes, ig1), sp1.totalGenomeFitness - g1.fitness, g => g.fitness)];
             }
 
-            while (p2 > selectedGenomes[i2].fitness) {
-                p2 -= selectedGenomes[i2].fitness;
-                i2++;
-            }
-
-            if (i1 === i2) continue;
-
-            offsprings.push(selectedGenomes[i1].crossover(selectedGenomes[i2]));
+            offsprings.push(g1.crossover(g2));
         }
 
         // 4. Mutate
 
         for (let genome of offsprings) {
             if (Math.random() < this.genomeWeightMutationChance) {
-                for (let gene of genome.genes) {
-                    const r = Math.random();
-                    if (r < this.geneWeightPerturbationChance) {
-                        gene.weight += this.weightPerturbation * randomSign();
-                    } else if (r < this.geneWeightPerturbationChance + this.geneWeightNewValueChance) {
-                        gene.weight = randomNormal(0, this.weightNewValueStdv);
-                    }
-                }
+                this.mutateWeights(genome);
             }
-
-
+            if (Math.random() < this.newNodeChance) {
+                this.addNode(genome);
+            }
+            if (Math.random() < this.newConnectionChance) {
+                this.addConnection(genome);
+            }
         }
 
         // 5. Mutate without crossover
 
         const mutants = [];
+        const totalMutationProbs = this.genomeWeightMutationChance + this.newNodeChance + this.newConnectionChance;
+        let rand;
 
         while (mutants.length + offsprings.length + elites.length < this.populationSize) {
+            const sp1 = this.species[weightedRandomElementFrom(this.species, totalSpeciesFitness, s => s.speciesFitness)];
+            const genome = Neat.Genome.fromGenome(sp1.genes[weightedRandomElementFrom(sp1.genomes, sp1.totalGenomeFitness, g => g.fitness)]);
 
-            this.mutants.push(mutate(SomeoneFromSelectedGenomes));
+            rand = Math.random();
+            if (rand < this.genomeWeightMutationChance) {
+                this.mutateWeights(genome);
+            } else if (rand < this.genomeWeightMutationChance + this.newNodeChance) {
+                this.addNode(genome);
+            } else {
+                this.addConnection(genome);
+            }
+
+            this.mutants.push(genome);
         }
 
-        // Decode
+        // 6. Decode
 
         this.population = [...elites, ...offsprings, ...mutants].map(g => g.decode());
-    }
-}
-/*
-Cycle:
-    1. Make population;
-    2. Evaluate (find fitness);
-    3. Eliminate lowest;
-    4. Crossover until full;
-    5. Mutate;
-    6. Back to (2)
-*/
-
-const adjustFitness = function (species) {
-    for (let sp of species) {
     }
 }

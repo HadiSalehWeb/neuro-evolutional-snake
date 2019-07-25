@@ -1,7 +1,5 @@
 'use strict';
 
-//Todo: loop
-
 class Snake {
     constructor(brain, head, body, direction, score, alive, killOnLoop) {
         this.brain = brain instanceof Brain ? brain : new Brain();

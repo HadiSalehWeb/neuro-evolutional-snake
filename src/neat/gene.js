@@ -25,6 +25,9 @@ Neat.Gene = class {
         this.innovation = innovation;
         this.enabled = enabled;
     }
+    static fromGene(gene) {
+        return new Neat.Gene(gene.inId, gene.inType, gene.inDepth, gene.outId, gene.outType, gene.outDepth, gene.weight, gene.innovation, gene.enabled);
+    }
     static fromConnection(connection) {
         return new Neat.Gene(
             connection.inNode.id, connection.inNode.type, connection.inNode.depth,
@@ -50,4 +53,4 @@ Neat.Gene = class {
     }
 }
 
-    
+
