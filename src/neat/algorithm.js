@@ -9,7 +9,7 @@ Neat.Algorithm = class {
         this.species = [];
 
         this.innovationNumber = Math.max(...this.population[0].connections.map(x => x.innovation)) + 1;
-        this.nodeId = Math.max(...flatten(this.population[0].connections.map(x => [x.inId, x.outId])));
+        this.nodeId = Math.max(...flatten(this.population[0].connections.map(x => [x.inNode.id, x.outNode.id]))) + 1;
         this.newNodeInnovations = [];
         this.newConnectionInnovations = [];
 
@@ -38,8 +38,11 @@ Neat.Algorithm = class {
             }, parameters)
         );
     }
+    getFittest(fitnessFunction) {
+        return this.population.reduce((a, c) => (f => f > a[1] ? [c, f] : a)(fitnessFunction(c)), [undefined, Number.MIN_SAFE_INTEGER])[0];
+    }
     static findNodesToConnect(genome) {
-        const fromNodes = unique(genome.genes.slice(), x => x.inId)
+        const fromNodes = unique(genome.genes.slice(), x => x.inId);
         while (fromNodes.length > 0) {
             const fromIndex = Math.floor(Math.random() * fromNodes.length);
             const fromGene = fromNodes[fromIndex];
@@ -49,12 +52,12 @@ Neat.Algorithm = class {
                 const toIndex = Math.floor(Math.random() * toNodes.length);
                 const toGene = toNodes[toIndex];
                 if (!genome.genes.some(g => g.inId === fromGene.inId && g.outId === toGene.outId))
-                    return [fromGene.inId, toNode.outId];
+                    return [fromGene.inId, toGene.outId];
 
                 toNodes.splice(toIndex, 1);
             }
 
-            genes.splice(fromIndex, 1);
+            fromNodes.splice(fromIndex, 1);
         }
         return undefined;
     }
@@ -82,12 +85,13 @@ Neat.Algorithm = class {
     }
     addConnection(genome) {
         const nodes = Neat.Algorithm.findNodesToConnect(genome);
+        if (nodes === undefined) return;
         const [inId, outId] = nodes;
 
         let innov = this.newConnectionInnovations.find(i => i.equals(inId, outId));
 
         if (innov === undefined) {
-            innov = new Neat.Innovation.AddConnection(idId, outId, this.innovationNumber++);
+            innov = new Neat.Innovation.AddConnection(inId, outId, this.innovationNumber++);
             this.newConnectionInnovations.push(innov);
         }
 
@@ -121,6 +125,8 @@ Neat.Algorithm = class {
             }
         }
 
+        this.species = this.species.filter(sp => sp.genomes.length > 0);
+
         // 2. Eliminate least fit genomes
 
         for (let sp of this.species)
@@ -147,7 +153,6 @@ Neat.Algorithm = class {
             .reduce((a, c) => c.genomes.length > this.eliteSpeciesThreshold ? a.concat(c.genomes.slice(0, this.elitistCount)) : a, []);
 
         const offsprings = [];
-
         while (offsprings.length + elites.length < this.populationSize * (1 - this.mutationWithoutCrossoverRate)) {
             const isp1 = weightedRandomElementFrom(this.species, totalSpeciesFitness, s => s.speciesFitness),
                 sp1 = this.species[isp1],
@@ -156,7 +161,7 @@ Neat.Algorithm = class {
 
             let g2;
 
-            if (Math.random() < this.interspeciesMatingRate) {
+            if (Math.random() < this.interspeciesMatingRate && this.species.length > 1) {
                 const isp2 = weightedRandomElementFrom(
                     removeAt(this.species, isp1),
                     totalSpeciesFitness - sp1.speciesFitness,
@@ -166,7 +171,8 @@ Neat.Algorithm = class {
                 //ig2 = weightedRandomElementFrom(sp2.genomes, sp2.totalGenomeFitness, g => g.fitness);
                 g2 = sp2.genomes[0];//sp2.genomes[ig2];
             } else {
-                g2 = sp1.genomes[weightedRandomElementFrom(removeAt(sp1.genomes, ig1), sp1.totalGenomeFitness - g1.fitness, g => g.fitness)];
+                if (sp1.genomes.length === 1) g2 = sp1.genomes[0];
+                else g2 = sp1.genomes[weightedRandomElementFrom(removeAt(sp1.genomes, ig1), sp1.totalGenomeFitness - g1.fitness, g => g.fitness)];
             }
 
             offsprings.push(g1.crossover(g2));
@@ -194,7 +200,7 @@ Neat.Algorithm = class {
 
         while (mutants.length + offsprings.length + elites.length < this.populationSize) {
             const sp1 = this.species[weightedRandomElementFrom(this.species, totalSpeciesFitness, s => s.speciesFitness)];
-            const genome = Neat.Genome.fromGenome(sp1.genes[weightedRandomElementFrom(sp1.genomes, sp1.totalGenomeFitness, g => g.fitness)]);
+            const genome = Neat.Genome.fromGenome(sp1.genomes[weightedRandomElementFrom(sp1.genomes, sp1.totalGenomeFitness, g => g.fitness)]);
 
             rand = Math.random();
             if (rand < this.genomeWeightMutationChance) {
@@ -205,7 +211,7 @@ Neat.Algorithm = class {
                 this.addConnection(genome);
             }
 
-            this.mutants.push(genome);
+            mutants.push(genome);
         }
 
         // 6. Decode

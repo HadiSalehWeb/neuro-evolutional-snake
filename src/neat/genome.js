@@ -6,33 +6,30 @@ Neat.Genome = class {
     constructor(genes, fitness) {
         this.genes = genes;
         this.fitness = fitness;
+        for (let gene of genes)
+            console.assert(gene.inDepth < gene.outDepth);
     }
     static fromGenome(genome) {
         return new Neat.Genome(genome.genes.map(g => Neat.Gene.fromGene(g)), genome.fitness);
     }
     decode() {
-        const nodes = [];
-
         const inputNodes = unique(
             this.genes.filter(g => g.inType === Neat.Node.Type.Input),
             g => g.inId
         ).map(g => new Neat.Node(g.inId, g.inType, g.inDepth));
 
-        nodes.push(...inputNodes);
-
         const outputNodes = unique(
             this.genes.filter(g => g.outType === Neat.Node.Type.Output),
             g => g.outId
-        ).map(g => new Neat.Node(g.outId, g.outType, g.inDepth));
-
-        nodes.push(...outputNodes);
+        ).map(g => new Neat.Node(g.outId, g.outType, g.outDepth));
 
         const hiddenNodes = unique(
-            this.genes.filter(g => !nodes.some(n => n.id === g.inId)),
+            this.genes.filter(g => g.inType === Neat.Node.Type.Inner || g.inType === Neat.Node.Type.Bias),
             g => g.inId
         ).map(g => new Neat.Node(g.inId, g.inType, g.inDepth));
+        hiddenNodes.sort((a, b) => a.depth - b.depth);
 
-        nodes.push(...hiddenNodes);
+        const nodes = [...inputNodes, ...hiddenNodes, ...outputNodes];
 
         const connections = [];
 
@@ -45,29 +42,13 @@ Neat.Genome = class {
 
         return new Neat.Network(inputNodes, outputNodes, hiddenNodes, connections);
     }
-    resolveDepth(gene) {
-        // Probably not the most efficient way to do it but fuck it
-        gene.outDepth++;
-
-        for (let nextGene of this.genes)
-            if (nextGene.inId === gene.outId)
-                nextGene.inDepth = gene.outDepth;
-            else if (nextGene.outId === gene.outId)
-                nextGene.outDepth = gene.outDepth;
-
-        for (let nextGene of this.genes)
-            if (nextGene.inId === gene.outId && nextGene.outDepth === gene.outDepth) {
-                this.resolveDepth(nextGene);
-                return;
-            }
-    }
     crossover(genome) {
         let genes1 = this.genes, genes2 = genome.genes,
             fitness1 = this.fitness, fitness2 = genome.fitness,
             i1 = 0, i2 = 0, iOffspring = 0, offspringGenes = [];
 
         while (i1 < genes1.length || i2 < genes2.length) {
-            if (i2 >= genes2.length || genes1[i1].innovation < genes2[i2].innovation) {
+            if (i2 >= genes2.length || (i1 < genes1.length && genes1[i1].innovation < genes2[i2].innovation)) {
                 if (fitness1 > fitness2 || (fitness1 === fitness2 && Math.random() < .5))
                     offspringGenes[iOffspring++] = genes1[i1];
                 i1++;
@@ -78,36 +59,28 @@ Neat.Genome = class {
             } else if (genes1[i1].innovation === genes2[i2].innovation) /* Practically just an 'else' */ {
                 offspringGenes[iOffspring++] = Math.random() < .5 ? genes1[i1] : genes2[i2];
                 if ((!genes1[i1].enabled || !genes2[i2].enabled) && Math.random() < .25)
-                    offspringGenes[iOffspring].enabled = true;
+                    offspringGenes[iOffspring - 1].enabled = true;
                 i1++;
                 i2++;
             }
         }
 
-        const offspring = offspringGenes;
-
-        for (var gene of offspring.genes)
-            if (gene.inDepth >= gene.outDepth)
-                this.resolveDepth(gene);
+        const offspring = new Neat.Genome(offspringGenes, -1);
 
         return offspring;
     }
-    mutateSplit(geneIndex, innovation1, innovation2, newNodeId = -1) {
-        if (newNodeId === -1) newNodeId = Math.max(...flatten(this.genes.map(g => [g.inId, g.outId]))) + 1;
+    mutateSplit(geneIndex, innovation1, innovation2, newNodeId) {
         const gene = this.genes[geneIndex];
         gene.enabled = false;
+        const newDepth = gene.inDepth * .5 + gene.outDepth * .5;
         this.genes.push(new Neat.Gene(
             gene.inId, gene.inType, gene.inDepth,
-            nextNodeId, Neat.Node.Type.Inner, gene.inDepth + 1,
+            newNodeId, Neat.Node.Type.Inner, newDepth,
             1, innovation1, true));
         this.genes.push(new Neat.Gene(
-            nextNodeId, Neat.Node.Type.Inner, gene.inDepth + 1,
+            newNodeId, Neat.Node.Type.Inner, newDepth,
             gene.outId, gene.outType, gene.outDepth,
             gene.weight, innovation2, true));
-
-        if (gene.inDepth + 1 === gene.outDepth) this.resolveDepth(last(this.genes));
-
-        return newNodeId;
     }
     mutateConnect(inId, outId, innovation) {
         const { inType, inDepth } = this.genes.find(g => g.inId === inId),
@@ -117,7 +90,7 @@ Neat.Genome = class {
             outId, outType, outDepth,
             randomNormal(0, 1), innovation, true));//TODOFORMALIZERANDOMWEIGHTS
 
-        if (inDepth >= outDepth) throw 'yo what the fuck';
+        console.assert(inDepth < outDepth);
     }
     toJOSN() {
         return {

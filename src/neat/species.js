@@ -63,8 +63,8 @@ Neat.Species = class {
     }
     eliminateUnfitAndSetFitness() {
         this.genomes.sort((a, b) => b.fitness - a.fitness);
-        this.genomes = this.genomes.slice(0, Math.floor(this.genomes.length / 2));
-        this.totalGenomeFitness = this.genomes.reduce((a, c) => a + c, 0);
+        this.genomes = this.genomes.slice(0, Math.ceil(this.genomes.length / 2));
+        this.totalGenomeFitness = this.genomes.reduce((a, c) => a + c.fitness, 0);
         this.speciesFitness = this.totalGenomeFitness / this.genomes.length;
     }
     progressOneGeneration() {

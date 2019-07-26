@@ -7,6 +7,7 @@ const argmin = arr => arr.reduce((a, c, i) => c < a[1] ? [i, c] : a, [-1, Number
 
 const range = n => Array(n).fill(0).map((_, i) => i);
 const flatten = arr => arr.reduce((a, c) => a.concat(c instanceof Array ? flatten(c) : c), []);
+const first = arr => arr[0];
 const last = arr => arr[arr.length - 1];
 const head = arr => arr[0];
 const tail = arr => arr.slice(1);

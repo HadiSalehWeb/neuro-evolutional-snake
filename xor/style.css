@@ -1,0 +1,5 @@
+* { padding: 0; margin: 0; font-family: Arial, sans-serif; font-size: 11px }
+html, body { height: 100% }
+
+main { font-size: 0; }
+main canvas{ border: 1px solid black; }

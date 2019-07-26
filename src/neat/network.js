@@ -1,5 +1,7 @@
 'use strict';
 
+// TODO optimize feedforward using the fact that nodes are now sorted by depth
+
 if (!window.Neat) window.Neat = {};
 
 Neat.Network = class {
@@ -15,6 +17,7 @@ Neat.Network = class {
         this.hiddenNodes = hiddenNodes;
         this.connections = connections;
     }
+    static bigNumber = 100000
     feedforward(input) {
         for (let node of [...this.hiddenNodes, ...this.outputNodes])
             node.resetValue();
@@ -35,7 +38,11 @@ Neat.Network = class {
         for (let l = 1; l < topology.length; l++) {
             const layer = [];
             for (let n = 0; n < topology[l]; n++) {
-                const node = new Neat.Node(nodeId++, l === topology.length - 1 ? Neat.Node.Type.Output : Neat.Node.Type.Inner, l);
+                const node = new Neat.Node(
+                    nodeId++,
+                    l === topology.length - 1 ? Neat.Node.Type.Output : Neat.Node.Type.Inner,
+                    (l / (topology.length - 1)) * Neat.Network.bigNumber
+                );
                 for (let c = 0; c < layers[l - 1].length; c++) {
                     const connection = new Neat.Connection(layers[l - 1][c], node, randomNormal(0, 1), startInnovation++);// Todo: Formalize weight initialization
                     node.connections.push(connection);
@@ -59,7 +66,7 @@ Neat.Network = class {
     static noConnections(input, output) {
         return new Neat.Network(
             range(input).map(i => new Neat.Node(i, Neat.Node.Type.Input, 0)).concat(new Neat.Node(input, Neat.Node.Type.Bias, 0)),
-            range(output).map(i => new Neat.Node(input + i + 1, Neat.Node.Type.Output, 1)),
+            range(output).map(i => new Neat.Node(input + i + 1, Neat.Node.Type.Output, Neat.Network.bigNumber)),
             [],
             []
         );
